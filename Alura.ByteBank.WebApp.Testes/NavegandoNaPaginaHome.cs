@@ -1,3 +1,5 @@
+using Alura.ByteBank.WebApp.Testes.PageObjects;
+using Alura.ByteBank.WebApp.Testes.Utilitarios;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
@@ -7,20 +9,24 @@ using Xunit;
 
 namespace Alura.ByteBank.WebApp.Testes
 {
-    public class NavegandoNaPaginaHome
+    public class NavegandoNaPaginaHome : IClassFixture<Gerenciador>
     {
         IWebDriver driver;
+        LoginPO loginPO;
+        HomePO homePO;
 
-        public NavegandoNaPaginaHome()
+        public NavegandoNaPaginaHome(Gerenciador gerenciador)
         {
-            driver = new ChromeDriver(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            driver = gerenciador.Driver;
+            loginPO = new LoginPO(driver);
+            homePO = new HomePO(driver);
         }
 
         [Fact]
         public void CarregaPaginaHomeEVerificaTituloDaPagina()
         {
             //Act
-            driver.Navigate().GoToUrl("https://localhost:44309");
+            loginPO.Navegar("https://localhost:44309");
 
             //Assert
             Assert.Contains("WebApp", driver.Title);
@@ -30,7 +36,7 @@ namespace Alura.ByteBank.WebApp.Testes
         public void CarregadaPaginaHomeVerificaExistenciaLinkLoginEHome()
         {
             //Act
-            driver.Navigate().GoToUrl("https://localhost:44309");
+            loginPO.Navegar("https://localhost:44309");
 
             //Assert
             Assert.Contains("Login", driver.PageSource);
@@ -57,7 +63,7 @@ namespace Alura.ByteBank.WebApp.Testes
         public void ValidaLinkDeLoginNaHome()
         {
             //Arrange
-            driver.Navigate().GoToUrl("https://localhost:44309/");
+            loginPO.Navegar("https://localhost:44309/");
             var linkLogin = driver.FindElement(By.LinkText("Login"));
 
             //Act
@@ -72,7 +78,7 @@ namespace Alura.ByteBank.WebApp.Testes
         public void TentaAcessarPaginaSemEstarLogado()
         {
             //Arrange & Act
-            driver.Navigate().GoToUrl("https://localhost:44309/Agencia/Index");
+            loginPO.Navegar("https://localhost:44309/Agencia/Index");
 
             //Assert
             Assert.Contains("401", driver.PageSource);
@@ -82,7 +88,7 @@ namespace Alura.ByteBank.WebApp.Testes
         public void TentaAcessarPaginaSemEstarLogadoVerificaURL()
         {
             //Arrange & Act
-            driver.Navigate().GoToUrl("https://localhost:44309/Agencia/Index");
+            loginPO.Navegar("https://localhost:44309/Agencia/Index");
 
             //Assert
             Assert.Contains("https://localhost:44309/Agencia/Index", driver.Url);
@@ -94,15 +100,10 @@ namespace Alura.ByteBank.WebApp.Testes
         [Fact]
         public void RealizaLoginAcessaMenuCadastraCliente()
         {
-            driver.Navigate().GoToUrl("https://localhost:44309/UsuarioApps/Login");
+            loginPO.Navegar("https://localhost:44309/UsuarioApps/Login");
 
-            var login = driver.FindElement(By.Name("Email"));
-            var senha = driver.FindElement(By.Name("Senha"));
-
-            login.SendKeys("matheus@email.com");
-            senha.SendKeys("senha01");
-
-            driver.FindElement(By.Id("btn-logar")).Click();
+            loginPO.PreencherCampos("matheus@email.com", "senha01");                        
+            loginPO.Logar();                        
 
             driver.FindElement(By.LinkText("Cliente")).Click();
             driver.FindElement(By.LinkText("Adicionar Cliente")).Click();
@@ -119,6 +120,24 @@ namespace Alura.ByteBank.WebApp.Testes
             
             driver.FindElement(By.ClassName("btn-primary")).Click();
 
+        }
+
+        [Fact]
+        public void RealizarLoginAcessaListagemDeContas()
+        {
+
+            //Arrange
+            var loginPO = new LoginPO(driver);
+            loginPO.Navegar("https://localhost:44309/UsuarioApps/Login");
+
+            //Act
+            loginPO.PreencherCampos("andre@email.com", "senha01");
+            loginPO.Logar();
+
+            homePO.LinkContaCorrenteClick();
+
+            //Assert   
+            Assert.Contains("Adicionar Conta-Corrente", driver.PageSource);
         }
     }
 }
